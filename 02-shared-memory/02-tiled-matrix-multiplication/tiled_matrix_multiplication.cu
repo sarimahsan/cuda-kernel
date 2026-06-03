@@ -1,4 +1,3 @@
-%%writefile tile.cu
 #include <cuda_runtime.h>
 #include <iostream>
 

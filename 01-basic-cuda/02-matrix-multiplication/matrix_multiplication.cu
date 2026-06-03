@@ -1,4 +1,3 @@
-%%writefile metrix.cu
 #include <stdio.h>
 #include <cuda_runtime.h>
 

@@ -1,4 +1,3 @@
-%%writefile ParallelREduction.cu
 #include <cuda.h>
 #include <iostream>
 

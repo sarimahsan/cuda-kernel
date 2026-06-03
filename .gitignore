@@ -1,0 +1,29 @@
+# CUDA compiled binaries
+*.exe
+*.out
+*.o
+*.obj
+
+# Specific compiled executables
+vector_addition
+matrix_multiplication
+parallel_reduction
+tiled_matrix_multiplication
+softmax
+
+# Notebook output leftovers
+output.txt
+
+# Build directories
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# IDE and Editor files
+.vscode/
+.vs/
+*.swp
+*.swo
+.DS_Store
