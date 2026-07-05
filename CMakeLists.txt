@@ -32,3 +32,14 @@ add_executable(tiled_matrix_multiplication
 add_executable(softmax 
     02-shared-memory/03-softmax/softmax.cu
 )
+
+# -------------------------------------------------------------
+# 03-attention executables
+# -------------------------------------------------------------
+add_executable(flashattn
+    03-attention/01-flashattention/flashattn.cu
+)
+
+add_executable(rmsnorm
+    03-attention/02-rmsnorm/rmsnorm.cu
+)
