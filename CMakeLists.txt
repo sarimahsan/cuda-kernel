@@ -1,14 +1,20 @@
 cmake_minimum_required(VERSION 3.18)
 project(CUDAKernels LANGUAGES CXX CUDA)
 
-# Enable C++17 and CUDA 17 standard
+# C++ and CUDA Language Standards
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
+# Optimization and Architecture Flags
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --use_fast_math")
+
+# Place all compiled binaries in a unified bin directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # -------------------------------------------------------------
-# 01-basic-cuda executables
+# Module 01: Basic CUDA Kernels
 # -------------------------------------------------------------
 add_executable(vector_addition 
     01-basic-cuda/01-vector-addition/vector_addition.cu
@@ -19,7 +25,7 @@ add_executable(matrix_multiplication
 )
 
 # -------------------------------------------------------------
-# 02-shared-memory executables
+# Module 02: Shared Memory & Reductions
 # -------------------------------------------------------------
 add_executable(parallel_reduction 
     02-shared-memory/01-parallel-reduction/parallel_reduction.cu
@@ -34,7 +40,7 @@ add_executable(softmax
 )
 
 # -------------------------------------------------------------
-# 03-attention executables
+# Module 03: Transformer & Attention Building Blocks
 # -------------------------------------------------------------
 add_executable(flashattn
     03-attention/01-flashattention/flashattn.cu
@@ -42,4 +48,8 @@ add_executable(flashattn
 
 add_executable(rmsnorm
     03-attention/02-rmsnorm/rmsnorm.cu
+)
+
+add_executable(rope
+    03-attention/03-rope/rope.cu
 )
