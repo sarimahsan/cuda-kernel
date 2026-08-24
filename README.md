@@ -19,16 +19,22 @@ cuda-kernels/
 │   │   └── parallel_reduction.cu       # Sum reduction with shared memory
 │   ├── 02-tiled-matrix-multiplication/
 │   │   └── tiled_matrix_multiplication.cu # Tiled matrix multiplication using shared memory
-│   └── 03-softmax/
-│       └── softmax.cu                  # Numerically stable softmax in shared memory
+│   ├── 03-softmax/
+│   │   └── softmax.cu                  # Numerically stable softmax in shared memory
+│   └── 04-warp-softmax/
+│       └── warp_softmax.cu             # High-speed softmax using warp shuffles and float4
 │
 ├── 03-attention/
 │   ├── 01-flashattention/
 │   │   └── flashattn.cu                # FlashAttention-v1 forward pass with online softmax
 │   ├── 02-rmsnorm/
 │   │   └── rmsnorm.cu                  # RMSNorm kernel
-│   └── 03-rope/
-│       └── rope.cu                     # Rotary Position Embedding (RoPE) in FP16
+│   ├── 03-rope/
+│   │   └── rope.cu                     # Rotary Position Embedding (RoPE) in FP16
+│   └── 04-swiglu/
+│       ├── swiglu.cu                   # Vectorized SwiGLU using float4 (FP32)
+│       ├── swiglu_half2.cu             # Vectorized SwiGLU using half2 (FP16)
+│       └── swiglu_fast.cu              # Ultra-fast 128-bit (uint4 = 8 halfs) SwiGLU with benchmark showdown
 │
 ├── CMakeLists.txt
 └── README.md
@@ -47,11 +53,12 @@ cuda-kernels/
 
 ---
 
-### 2. Shared Memory Optimizations
+### 2. Shared Memory & Warp-Level Optimizations
 - **Parallel Reduction**: Uses `__syncthreads()` and tree-based reduction in shared memory to sum an array of size $N$ in $O(\log N)$ parallel steps per block.
 - **Tiled Matrix Multiplication**: Loads $T \times T$ sub-matrices into shared memory (`__shared__ float sA[T][T]`) to reduce slow global memory accesses by a factor of $T$.
-- **Softmax**: Computes numerical max subtraction and exponent sum in block-shared memory:
+- **Shared-Memory Softmax**: Computes numerical max subtraction and exponent sum in block-shared memory:
   $$m = \max_i(x_i), \quad \operatorname{Softmax}(x_i) = \frac{\exp(x_i - m)}{\sum_j \exp(x_j - m)}$$
+- **Warp-Level Softmax (`warp_softmax.cu`)**: One warp (32 threads) processes an entire row directly in registers using `__shfl_xor_sync` and 128-bit `float4` vectorized loads, eliminating shared memory bank conflicts and latency.
 
 ---
 
@@ -71,6 +78,16 @@ Scales input tokens by their root mean square without centering:
 
 $$\operatorname{RMS}(\mathbf{x}) = \sqrt{\frac{1}{D} \sum_{i=1}^D x_i^2 + \epsilon}$$
 $$y_i = \frac{x_i}{\operatorname{RMS}(\mathbf{x})} \cdot \gamma_i$$
+
+#### SwiGLU Activation
+Fused Gated Linear Unit with SiLU activation function:
+
+$$\operatorname{SiLU}(x) = \frac{x}{1 + e^{-x}}$$
+$$\operatorname{SwiGLU}(x, g) = \operatorname{SiLU}(x) \odot g$$
+
+- `swiglu.cu`: Uses `float4` vector loads (128-bit transactions).
+- `swiglu_half2.cu`: Uses `half2` vector loads (32-bit transactions) with `__hmul2` instructions.
+- `swiglu_fast.cu`: Ultra-fast 128-bit vector loads (`uint4` packaging 8 FP16 `half` elements per thread) + grid-stride unrolling + hardware reciprocal (`__frcp_rn`), benchmarking scalar vs `half2` vs 128-bit `uint4` side-by-side.
 
 #### FlashAttention (Forward Pass)
 Computes multi-head attention in tiles without writing intermediate $N \times N$ score matrices to GPU DRAM:
@@ -98,11 +115,19 @@ cmake --build .
 ### Using NVCC directly
 
 ```bash
-# Example: RoPE
+# Ultra-Fast SwiGLU Benchmark Showdown
+nvcc -O3 03-attention/04-swiglu/swiglu_fast.cu -o swiglu_fast
+./swiglu_fast
+
+# Warp-Level Softmax
+nvcc -O3 02-shared-memory/04-warp-softmax/warp_softmax.cu -o warp_softmax
+./warp_softmax
+
+# RoPE
 nvcc -O3 03-attention/03-rope/rope.cu -o rope
 ./rope
 
-# Example: FlashAttention
+# FlashAttention
 nvcc -O3 03-attention/01-flashattention/flashattn.cu -o flashattn
 ./flashattn
 ```

@@ -39,6 +39,10 @@ add_executable(softmax
     02-shared-memory/03-softmax/softmax.cu
 )
 
+add_executable(warp_softmax 
+    02-shared-memory/04-warp-softmax/warp_softmax.cu
+)
+
 # -------------------------------------------------------------
 # Module 03: Transformer & Attention Building Blocks
 # -------------------------------------------------------------
@@ -52,4 +56,16 @@ add_executable(rmsnorm
 
 add_executable(rope
     03-attention/03-rope/rope.cu
+)
+
+add_executable(swiglu
+    03-attention/04-swiglu/swiglu.cu
+)
+
+add_executable(swiglu_half2
+    03-attention/04-swiglu/swiglu_half2.cu
+)
+
+add_executable(swiglu_fast
+    03-attention/04-swiglu/swiglu_fast.cu
 )
