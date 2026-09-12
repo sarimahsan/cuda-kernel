@@ -145,6 +145,9 @@ int main() {
         if (err > 5e-3 && first_bad < 0) first_bad = i;
     }
 
+    printf("====================================================\n");
+    printf("      Module 03: Vectorized SwiGLU (FP16 half2)     \n");
+    printf("====================================================\n\n");
     printf("N = %d elements (fp16)\n", N_test);
     printf("Avg kernel time: %.4f ms\n", avg_ms);
     double bytes_moved = 3.0 * N_test * sizeof(half);
@@ -155,7 +158,7 @@ int main() {
         printf("FAIL: first mismatch at idx %d (got %f, expected %f)\n",
                first_bad, __half2float(h_out[first_bad]), h_ref[first_bad]);
     } else {
-        printf("PASS: kernel output matches reference within fp16 tolerance.\n");
+        printf("Verification: PASSED (output matches reference within fp16 tolerance)\n\n");
     }
 
     free(h_xf); free(h_gf); free(h_x); free(h_g); free(h_out); free(h_ref);

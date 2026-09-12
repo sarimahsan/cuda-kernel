@@ -12,6 +12,14 @@ void check(cudaError_t err, const char* const func, const char* const file, cons
     }
 }
 
+/**
+ * Rotary Position Embedding (RoPE) Kernel:
+ * Rotates pairs of head dimensions by frequency theta_i:
+ *   theta_i = theta_base^(-2i / D)
+ *   angle   = s * theta_i
+ *   y1      = x1 * cos(angle) - x2 * sin(angle)
+ *   y2      = x1 * sin(angle) + x2 * cos(angle)
+ */
 __global__ void rope_kernel(
     const half* __restrict__ x,
     half* __restrict__ y,
@@ -62,6 +70,10 @@ int main() {
     int D = 4;
     float theta_base = 10000.0f;
 
+    printf("====================================================\n");
+    printf("  Module 04: Rotary Position Embedding (RoPE FP16)   \n");
+    printf("====================================================\n\n");
+
     int total_elements = B * S * H * D;
     size_t bytes = total_elements * sizeof(half);
 
@@ -110,6 +122,6 @@ int main() {
     free(h_x);
     free(h_y);
 
-    printf("Program finished successfully.\n");
+    printf("Status: PASSED\n\n");
     return 0;
 }

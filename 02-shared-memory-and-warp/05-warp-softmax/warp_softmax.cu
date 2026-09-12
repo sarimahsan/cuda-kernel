@@ -120,6 +120,10 @@ int main() {
     size_t num_elements = (size_t)rows * cols;
     size_t bytes = num_elements * sizeof(float);
 
+    printf("====================================================\n");
+    printf("     Module 02: Warp-Level Softmax (float4)         \n");
+    printf("====================================================\n\n");
+
     float* h_in = (float*)malloc(bytes);
     float* h_out_gpu = (float*)malloc(bytes);
     float* h_out_cpu = (float*)malloc(bytes);
@@ -176,7 +180,7 @@ int main() {
     printf("Avg kernel time: %.4f ms\n", avg_ms);
     printf("Effective bandwidth: %.2f GB/s\n", gbps);
     printf("Max absolute error vs CPU: %e\n", max_err);
-    printf("Verification: %s\n", max_err < 1e-5 ? "PASS" : "FAIL");
+    printf("Verification: %s\n\n", max_err < 1e-5 ? "PASSED" : "FAILED");
 
     CHECK_CUDA_ERROR(cudaFree(d_in));
     CHECK_CUDA_ERROR(cudaFree(d_out));

@@ -1,4 +1,3 @@
-%%writefile swiglu_fast.cu
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
 #include <cstdio>
@@ -54,7 +53,7 @@ __global__ void swiglu_scalar_baseline(
 }
 
 // ─────────────────────────────────────────────────────────────
-// 2. KERNEL: half2 Standard (1x half2 per thread, templated on silu function)
+// 2. KERNEL: half2 Standard (1x half2 per thread)
 // ─────────────────────────────────────────────────────────────
 __global__ void swiglu_half2_hybrid(
     const half2* __restrict__ x,

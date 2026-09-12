@@ -129,6 +129,9 @@ int main() {
         if (err > 1e-3 && first_bad < 0) first_bad = i;
     }
 
+    printf("====================================================\n");
+    printf("     Module 03: Vectorized SwiGLU (FP32 float4)     \n");
+    printf("====================================================\n\n");
     printf("N = %d elements\n", N_test);
     printf("Avg kernel time: %.4f ms\n", avg_ms);
     double bytes_moved = 3.0 * N_test * sizeof(float);
@@ -139,7 +142,7 @@ int main() {
         printf("FAIL: first mismatch at idx %d (got %f, expected %f)\n",
                first_bad, h_out[first_bad], h_ref[first_bad]);
     } else {
-        printf("PASS: kernel output matches CPU reference within tolerance.\n");
+        printf("Verification: PASSED (output matches CPU reference within tolerance)\n\n");
     }
 
     free(h_x); free(h_g); free(h_out); free(h_ref);

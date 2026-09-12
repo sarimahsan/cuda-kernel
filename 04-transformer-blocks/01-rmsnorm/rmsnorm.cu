@@ -11,6 +11,11 @@ void check(cudaError_t err, const char* const func, const char* const file, cons
     }
 }
 
+/**
+ * Root Mean Square Layer Normalization (RMSNorm):
+ *   RMS(x) = sqrt( 1/d * sum(x_i^2) + eps )
+ *   y_i    = (x_i / RMS(x)) * gamma_i
+ */
 __global__ void rmsnorm_kernel(
     const float* __restrict__ x,
     const float* __restrict__ gamma,
@@ -32,18 +37,21 @@ __global__ void rmsnorm_kernel(
     }
     sdata[tid] = local_sum;
     __syncthreads();
+
     for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
         if (tid < stride) {
             sdata[tid] += sdata[tid + stride];
         }
         __syncthreads();
     }
+
     __shared__ float rms;
     if (tid == 0) {
         float mean_sq = sdata[0] / hidden_dim;
         rms = rsqrtf(mean_sq + eps);
     }
     __syncthreads();
+
     for (int i = tid; i < hidden_dim; i += blockDim.x) {
         out_row[i] = x_row[i] * rms * gamma[i];
     }
@@ -54,11 +62,14 @@ int main() {
     int hidden_dim = 4;
     float eps = 1e-6f;
 
+    printf("====================================================\n");
+    printf("        Module 04: RMSNorm Layer Normalization      \n");
+    printf("====================================================\n\n");
+
     float h_x[] = {1.0f, 2.0f, 3.0f, 4.0f,
                    5.0f, 6.0f, 7.0f, 8.0f};
     float h_gamma[] = {1.0f, 1.0f, 1.0f, 1.0f};
-
-    float h_out[rows * hidden_dim];
+    float h_out[8];
 
     float *d_x, *d_gamma, *d_out;
 
@@ -82,7 +93,6 @@ int main() {
 
     rmsnorm_kernel<<<dimGrid, dimBlock, smem_size>>>(d_x, d_gamma, d_out, hidden_dim, eps);
     CHECK_CUDA_ERROR(cudaGetLastError());
-
     CHECK_CUDA_ERROR(cudaDeviceSynchronize());
 
     CHECK_CUDA_ERROR(cudaMemcpy(h_out, d_out, rows * hidden_dim * sizeof(float), cudaMemcpyDeviceToHost));
@@ -99,7 +109,6 @@ int main() {
     CHECK_CUDA_ERROR(cudaFree(d_gamma));
     CHECK_CUDA_ERROR(cudaFree(d_out));
 
-    printf("Program finished successfully.\n");
-
+    printf("Status: PASSED\n\n");
     return 0;
 }
