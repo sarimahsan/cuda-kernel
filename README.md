@@ -156,7 +156,7 @@ A warp consists of 32 threads executing in SIMT lockstep. Register shuffle instr
 Computes numerically stable softmax along an array:
 $$m = \max_{j} x_j$$
 $$S_i = \exp(x_i - m)$$
-$$\operatorname{Softmax}(x_i) = \frac{S_i}{\sum_{j} S_j}$$
+$$\text{Softmax}(x_i) = \frac{S_i}{\sum_{j} S_j}$$
 Subtracting $m$ prevents numerical overflow during exponentiation ($\exp(x)$ overflows standard FP32 at $x \approx 88.7$).
 
 #### 5. Warp-Level Softmax (`warp_softmax.cu`)
@@ -168,7 +168,7 @@ Dedicates exactly one warp (32 threads) to each row of a matrix. It combines 128
 
 #### 1. SiLU (Swish) Fused Activation (`silu.cu`)
 The Sigmoid Linear Unit (SiLU), also known as Swish-1, is defined as:
-$$\operatorname{SiLU}(x) = x \cdot \sigma(x) = \frac{x}{1 + e^{-x}}$$
+$$\text{SiLU}(x) = x \cdot \sigma(x) = \frac{x}{1 + e^{-x}}$$
 To maximize hardware instruction throughput, division and exponentiation are evaluated using hardware intrinsics:
 ```cpp
 __device__ __forceinline__ float silu(float x) {
@@ -179,7 +179,7 @@ where `__expf` maps directly to the Special Function Unit (SFU) and `__frcp_rn` 
 
 #### 2. SwiGLU Fused Kernel (`swiglu.cu`, `swiglu_half2.cu`, `swiglu_fast.cu`)
 SwiGLU is the gated activation function introduced by Shazeer (2020) and utilized in state-of-the-art LLMs (e.g., LLaMA 1/2/3, Mistral, Gemma, PaLM). Given input $x$ and gate $g$:
-$$\operatorname{SwiGLU}(x, g) = \operatorname{SiLU}(x) \odot g = \left( \frac{x}{1 + e^{-x}} \right) \cdot g$$
+$$\text{SwiGLU}(x, g) = \text{SiLU}(x) \odot g = \left( \frac{x}{1 + e^{-x}} \right) \cdot g$$
 
 The repository provides a complete optimization ladder:
 1. **FP32 Vectorized (`swiglu.cu`)**: Uses `float4` loads to process 4 floats per thread.
@@ -197,18 +197,19 @@ The repository provides a complete optimization ladder:
 
 #### 1. Root Mean Square Normalization (`rmsnorm.cu`)
 RMSNorm simplifies LayerNorm by eliminating mean-centering:
-$$\operatorname{RMS}(\mathbf{x}) = \sqrt{\frac{1}{D} \sum_{i=1}^D x_i^2 + \epsilon}$$
-$$y_i = \frac{x_i}{\operatorname{RMS}(\mathbf{x})} \cdot \gamma_i$$
+$$\text{RMS}(\mathbf{x}) = \sqrt{\frac{1}{D} \sum_{i=1}^D x_i^2 + \epsilon}$$
+$$y_i = \frac{x_i}{\text{RMS}(\mathbf{x})} \cdot \gamma_i$$
 Reduces computational overhead while matching transformer performance.
 
 #### 2. Rotary Position Embedding (`rope.cu`)
 Applies position-dependent rotation to query and key representations. For token position $s$ and head dimension index $i \in \{0, \dots, D/2 - 1\}$:
 $$\theta_i = \text{base}^{-\frac{2i}{D}}, \quad \alpha_{s, i} = s \cdot \theta_i$$
-$$\begin{bmatrix} y_i \\ y_{i + D/2} \end{bmatrix} = \begin{bmatrix} \cos(\alpha_{s, i}) & -\sin(\alpha_{s, i}) \\ \sin(\alpha_{s, i}) & \cos(\alpha_{s, i}) \end{bmatrix} \begin{bmatrix} x_i \\ x_{i + D/2} \end{bmatrix}$$
+$$y_i = x_i \cos(\alpha_{s, i}) - x_{i + D/2} \sin(\alpha_{s, i})$$
+$$y_{i + D/2} = x_i \sin(\alpha_{s, i}) + x_{i + D/2} \cos(\alpha_{s, i})$$
 
 #### 3. FlashAttention Forward Pass (`flashattn.cu`)
 Standard attention evaluates:
-$$\mathbf{O} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d}}\right)\mathbf{V}$$
+$$\mathbf{O} = \text{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d}}\right)\mathbf{V}$$
 Materializing the intermediate $N \times N$ attention matrix incurs $O(N^2)$ memory reads/writes to high-latency HBM. FlashAttention tiles $Q$ into blocks of size $B_r \times d$ and $K, V$ into blocks of size $B_c \times d$ in SRAM, employing an online softmax rescaling algorithm:
 $$\alpha = \exp(m_{\text{old}} - m_{\text{new}})$$
 $$l_{\text{new}} = \alpha \cdot l_{\text{old}} + \sum \exp(S - m_{\text{new}})$$
